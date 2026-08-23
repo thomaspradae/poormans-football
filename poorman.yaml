@@ -1,5 +1,11 @@
 setup: null
 
+toolchain: unity
+
+unity:
+  editmode_tests: true
+  playmode_tests: false
+
 test: null
 lint: null
 typecheck: null
