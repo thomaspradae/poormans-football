@@ -1,6 +1,6 @@
 setup: null
 
-test: "pytest -q"
+test: null
 lint: null
 typecheck: null
 build: null
@@ -9,8 +9,8 @@ build: null
 hidden_test: null
 
 timeout_seconds: 600
-max_patch_lines: 500
-max_files_changed: 10
+max_patch_lines: 2000
+max_files_changed: 100
 no_new_dependencies: false
 
 protected:
@@ -18,6 +18,12 @@ protected:
   - ".github/workflows/**"
   - "secrets/**"
   - ".env"
+  - "Library/**"
+  - "Temp/**"
+  - "Logs/**"
+  - "Obj/**"
+  - "Builds/**"
+  - "UserSettings/**"
 
 # Optional dependency manifests to protect when no_new_dependencies=true.
 dependency_files:
@@ -27,6 +33,14 @@ dependency_files:
   - "package-lock.json"
   - "pnpm-lock.yaml"
   - "yarn.lock"
+  - "Packages/manifest.json"
+  - "Packages/packages-lock.json"
 
 # Additional untracked artifacts to exclude from acceptance diffs.
-verification_ignore: []
+verification_ignore:
+  - "Library/**"
+  - "Temp/**"
+  - "Logs/**"
+  - "Obj/**"
+  - "Builds/**"
+  - "UserSettings/**"
