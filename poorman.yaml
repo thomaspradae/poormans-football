@@ -3,7 +3,11 @@ setup: null
 toolchain: unity
 
 unity:
-  editmode_tests: true
+  memory_mb: 6144
+  max_single_file_mb: 0
+  process_limit: 512
+  network_for_license: false
+  editmode_tests: false
   playmode_tests: false
 
 test: null
