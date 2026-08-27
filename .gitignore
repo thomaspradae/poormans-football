@@ -8,8 +8,12 @@
 
 .pmc-unity-*.log
 
-*.csproj
-*.sln
+# .NET build artifacts
+**/bin/
+**/obj/
+bin/
+obj/
+
 *.suo
 *.tmp
 *.user
