@@ -15,6 +15,18 @@
           "url": "https://raw.githubusercontent.com/openfootball/colombia/master/2023/1-liga.txt",
           "sha256": "",
           "description": "2023 Liga BetPlay Dimayor match results"
+        },
+        {
+          "sourceId": "openfootball-colombia-2024",
+          "url": "https://raw.githubusercontent.com/openfootball/south-america/master/colombia/2024_co1.txt",
+          "sha256": "94ce01499dd57f63ee969659bcb275f8c78159d5c8d12de05e31d1119fdaa7b8",
+          "description": "2024 Liga BetPlay Dimayor match results"
+        },
+        {
+          "sourceId": "openfootball-colombia-2025",
+          "url": "https://raw.githubusercontent.com/openfootball/south-america/master/colombia/2025_co1.txt",
+          "sha256": "344077bf938fd58817afe5d61850a259a2a339985c278b6dd924f43a52f68d18",
+          "description": "2025 Liga BetPlay Dimayor match results"
         }
       ]
     },
