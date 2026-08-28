@@ -24,11 +24,7 @@ namespace FootballWorldLab.Core.Provenance
         
         /// <summary>
         /// Data was estimated or calculated from other data.
-<<<<<<< ours
-        /// </derived>
-=======
         /// </summary>
->>>>>>> theirs
         Derived,
         
         /// <summary>
@@ -65,8 +61,4 @@ namespace FootballWorldLab.Core.Provenance
         public ProvenanceInfo Recorded(string? recordedBy = null) => 
             new ProvenanceInfo(Source, Description, DateTime.UtcNow, recordedBy ?? RecordedBy);
     }
-<<<<<<< ours
 }
-=======
-}
->>>>>>> theirs

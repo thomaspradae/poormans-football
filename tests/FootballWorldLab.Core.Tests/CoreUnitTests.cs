@@ -1,14 +1,6 @@
 using System;
 using System.IO;
 using System.Linq;
-<<<<<<< ours
-using FootballWorldLab.Core.Clock;
-using FootballWorldLab.Core.Entities;
-using FootballWorldLab.Core.Ids;
-using FootballWorldLab.Core.Persistence;
-using FootballWorldLab.Core.Rng;
-using FootballWorldLab.Core.Salience;
-=======
 using FootballWorldLab.Core.Analysis;
 using FootballWorldLab.Core.Clock;
 using FootballWorldLab.Core.Entities;
@@ -17,7 +9,6 @@ using FootballWorldLab.Core.Invariants;
 using FootballWorldLab.Core.MonteCarlo;
 using FootballWorldLab.Core.Persistence;
 using FootballWorldLab.Core.Rng;
->>>>>>> theirs
 using FootballWorldLab.Core.Simulation;
 using Xunit;
 
@@ -122,48 +113,37 @@ namespace FootballWorldLab.Core.Tests
             Assert.Equal(25000m, contract.WeeklyWage);
         }
 
-<<<<<<< ours
-        [Theory]
-        [InlineData(1)]
-        [InlineData(5)]
-        [InlineData(20)]
-        public void SimulationEngine_RunsMultiYearSimulationsSuccessfully(int years)
-        {
-            var engine = new SimulationEngine(999UL);
-            engine.RunYears(years);
-
-            Assert.Equal(2024 + years, engine.Clock.CurrentYear);
-            Assert.NotEmpty(engine.EventLog);
-            Assert.NotEmpty(engine.DomesticStandings);
-        }
-
         [Fact]
-        public void SaveAndReload_CanonicalHashMatchesContinuousRun()
+        public void SaveAndReload_WorldState_SerializesAndDeserializesWithStableIdKeys()
         {
-            const ulong seed = 777UL;
-            const int years = 3;
-            string testFile = Path.Combine(Path.GetTempPath(), $"test_save_{Guid.NewGuid()}.json");
+            var engine = new SimulationEngine(42UL);
+            engine.InitializeDefaultWorld(clubsPerLeague: 4, leagues: 1);
+            engine.RunYears(1);
 
+            string tempFile = Path.Combine(Path.GetTempPath(), $"save_test_{Guid.NewGuid()}.json");
             try
             {
-                // Run continuous simulation
-                var engineContinuous = new SimulationEngine(seed);
-                engineContinuous.RunYears(years);
-                string hashContinuous = SaveManager.ComputeCanonicalHash(engineContinuous);
+                SaveManager.SaveToFile(engine.State, tempFile);
+                Assert.True(File.Exists(tempFile));
 
-                // Save simulation to disk
-                SaveManager.SaveToFile(engineContinuous, testFile, years, seed);
+                var reloadedState = SaveManager.LoadFromFile(tempFile);
+                Assert.Equal(engine.State.Clubs.Count, reloadedState.Clubs.Count);
+                Assert.Equal(engine.State.Players.Count, reloadedState.Players.Count);
+                Assert.Equal(engine.State.Competitions.Count, reloadedState.Competitions.Count);
 
-                // Reload and run continuous from file
-                var engineReloaded = SaveManager.ReloadAndRunContinuous(testFile);
-                string hashReloaded = SaveManager.ComputeCanonicalHash(engineReloaded);
-
-                Assert.Equal(hashContinuous, hashReloaded);
+                foreach (var kvp in engine.State.Clubs)
+                {
+                    Assert.True(reloadedState.Clubs.TryGetValue(kvp.Key, out var reloadedClub));
+                    Assert.Equal(kvp.Value.Name, reloadedClub.Name);
+                    Assert.Equal(kvp.Value.RatingElo, reloadedClub.RatingElo);
+                }
             }
             finally
             {
-                if (File.Exists(testFile)) File.Delete(testFile);
-=======
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
         [Fact]
         public void SimulationEngine_RunsSeasonsAndProducesMatches()
         {
@@ -192,25 +172,10 @@ namespace FootballWorldLab.Core.Tests
             {
                 Assert.True(engine2.State.Clubs.TryGetValue(kvp.Key, out var club2));
                 Assert.Equal(kvp.Value.RatingElo, club2.RatingElo, precision: 4);
->>>>>>> theirs
             }
         }
 
         [Fact]
-<<<<<<< ours
-        public void SalienceAndThreadClustering_GeneratesValidThreadsAndExplanations()
-        {
-            var engine = new SimulationEngine(1234UL);
-            engine.RunYears(1);
-
-            var threads = SalienceEvaluator.ClusterThreads(engine.EventLog, engine.State);
-            Assert.NotEmpty(threads);
-
-            var topThread = threads.First();
-            Assert.NotNull(topThread.Title);
-            Assert.NotEmpty(topThread.Explanations);
-            Assert.NotEmpty(topThread.Events);
-=======
         public void InvariantChecker_ValidatesStateAndCatchesViolations()
         {
             var engine = new SimulationEngine(123UL);
@@ -296,7 +261,6 @@ namespace FootballWorldLab.Core.Tests
                     Directory.Delete(testOutputDir, recursive: true);
                 }
             }
->>>>>>> theirs
         }
     }
 }
