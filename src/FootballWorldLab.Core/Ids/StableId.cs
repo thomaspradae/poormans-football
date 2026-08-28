@@ -1,6 +1,7 @@
 using System;
 using System.Security.Cryptography;
 using System.Text;
+<<<<<<< ours
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -35,6 +36,14 @@ namespace FootballWorldLab.Core.Ids
     /// Represents a stable, deterministic identifier for domain entities.
     /// </summary>
     [JsonConverter(typeof(StableIdJsonConverter))]
+=======
+
+namespace FootballWorldLab.Core.Ids
+{
+    /// <summary>
+    /// Represents a stable, deterministic identifier for domain entities.
+    /// </summary>
+>>>>>>> theirs
     public readonly struct StableId : IEquatable<StableId>, IComparable<StableId>
     {
         public string Value { get; }

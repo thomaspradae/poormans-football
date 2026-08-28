@@ -21,6 +21,7 @@ namespace FootballWorldLab.Core.State
         public ImmutableDictionary<StableId, SquadMembership> SquadMemberships { get; init; } = ImmutableDictionary<StableId, SquadMembership>.Empty;
         public ImmutableDictionary<StableId, Contract> Contracts { get; init; } = ImmutableDictionary<StableId, Contract>.Empty;
 
+<<<<<<< ours
         public WorldState WithClub(Club club) => this with { Clubs = Clubs.SetOrAdd(club.Id, club) };
         public WorldState WithPlayer(Player player) => this with { Players = Players.SetOrAdd(player.Id, player) };
         public WorldState WithManager(Manager manager) => this with { Managers = Managers.SetOrAdd(manager.Id, manager) };
@@ -32,6 +33,19 @@ namespace FootballWorldLab.Core.State
         public WorldState WithMatch(Match match) => this with { Matches = Matches.SetOrAdd(match.Id, match) };
         public WorldState WithSquadMembership(SquadMembership membership) => this with { SquadMemberships = SquadMemberships.SetOrAdd(membership.Id, membership) };
         public WorldState WithContract(Contract contract) => this with { Contracts = Contracts.SetOrAdd(contract.Id, contract) };
+=======
+        public WorldState WithClub(Club club) => this with { Clubs = Clubs.SetItem(club.Id, club) };
+        public WorldState WithPlayer(Player player) => this with { Players = Players.SetItem(player.Id, player) };
+        public WorldState WithManager(Manager manager) => this with { Managers = Managers.SetItem(manager.Id, manager) };
+        public WorldState WithPerson(Person person) => this with { People = People.SetItem(person.Id, person) };
+        public WorldState WithCity(City city) => this with { Cities = Cities.SetItem(city.Id, city) };
+        public WorldState WithCountry(Country country) => this with { Countries = Countries.SetItem(country.Id, country) };
+        public WorldState WithCompetition(Competition competition) => this with { Competitions = Competitions.SetItem(competition.Id, competition) };
+        public WorldState WithSeason(Season season) => this with { Seasons = Seasons.SetItem(season.Id, season) };
+        public WorldState WithMatch(Match match) => this with { Matches = Matches.SetItem(match.Id, match) };
+        public WorldState WithSquadMembership(SquadMembership membership) => this with { SquadMemberships = SquadMemberships.SetItem(membership.Id, membership) };
+        public WorldState WithContract(Contract contract) => this with { Contracts = Contracts.SetItem(contract.Id, contract) };
+>>>>>>> theirs
 
         public WorldState RemoveClub(StableId clubId) => this with { Clubs = Clubs.Remove(clubId) };
         public WorldState RemovePlayer(StableId playerId) => this with { Players = Players.Remove(playerId) };
@@ -45,4 +59,8 @@ namespace FootballWorldLab.Core.State
         public WorldState RemoveSquadMembership(StableId membershipId) => this with { SquadMemberships = SquadMemberships.Remove(membershipId) };
         public WorldState RemoveContract(StableId contractId) => this with { Contracts = Contracts.Remove(contractId) };
     }
+<<<<<<< ours
 }
+=======
+}
+>>>>>>> theirs

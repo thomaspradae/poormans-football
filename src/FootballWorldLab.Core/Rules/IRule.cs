@@ -1,3 +1,7 @@
+<<<<<<< ours
+=======
+using System.Collections.Immutable;
+>>>>>>> theirs
 using FootballWorldLab.Core.Events;
 using FootballWorldLab.Core.State;
 
@@ -24,4 +28,8 @@ namespace FootballWorldLab.Core.Rules
         /// </summary>
         ImmutableArray<IEffect> Evaluate(WorldState state, ImmutableArray<BaseEvent> recentEvents);
     }
+<<<<<<< ours
 }
+=======
+}
+>>>>>>> theirs

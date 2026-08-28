@@ -84,6 +84,7 @@ namespace FootballWorldLab.Core.Events
             NewValue = newValue;
         }
     }
+<<<<<<< ours
 
     /// <summary>
     /// Event representing a manager being sacked.
@@ -140,3 +141,6 @@ namespace FootballWorldLab.Core.Events
         }
     }
 }
+=======
+}
+>>>>>>> theirs
