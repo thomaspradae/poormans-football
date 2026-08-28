@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
 using FootballWorldLab.Core.Entities;
+using FootballWorldLab.Core.Events;
 using FootballWorldLab.Core.Ids;
+using FootballWorldLab.Core.Provenance;
 
 namespace FootballWorldLab.Core.State
 {
@@ -21,6 +23,9 @@ namespace FootballWorldLab.Core.State
         public ImmutableDictionary<StableId, SquadMembership> SquadMemberships { get; init; } = ImmutableDictionary<StableId, SquadMembership>.Empty;
         public ImmutableDictionary<StableId, Contract> Contracts { get; init; } = ImmutableDictionary<StableId, Contract>.Empty;
 
+        public StateContributionLedger Ledger { get; init; } = new StateContributionLedger();
+        public ImmutableList<Effect> Effects { get; init; } = ImmutableList<Effect>.Empty;
+
         public WorldState WithClub(Club club) => this with { Clubs = Clubs.SetItem(club.Id, club) };
         public WorldState WithPlayer(Player player) => this with { Players = Players.SetItem(player.Id, player) };
         public WorldState WithManager(Manager manager) => this with { Managers = Managers.SetItem(manager.Id, manager) };
@@ -32,6 +37,9 @@ namespace FootballWorldLab.Core.State
         public WorldState WithMatch(Match match) => this with { Matches = Matches.SetItem(match.Id, match) };
         public WorldState WithSquadMembership(SquadMembership membership) => this with { SquadMemberships = SquadMemberships.SetItem(membership.Id, membership) };
         public WorldState WithContract(Contract contract) => this with { Contracts = Contracts.SetItem(contract.Id, contract) };
+
+        public WorldState WithContribution(StateContribution contribution) => this with { Ledger = Ledger.Add(contribution) };
+        public WorldState WithEffect(Effect effect) => this with { Effects = Effects.Add(effect) };
 
         public WorldState RemoveClub(StableId clubId) => this with { Clubs = Clubs.Remove(clubId) };
         public WorldState RemovePlayer(StableId playerId) => this with { Players = Players.Remove(playerId) };

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FootballWorldLab.Core.Events;
 using FootballWorldLab.Core.Ids;
+using FootballWorldLab.Core.Provenance;
 using FootballWorldLab.Core.Simulation;
 
 namespace FootballWorldLab.Core.Analysis
@@ -13,26 +14,53 @@ namespace FootballWorldLab.Core.Analysis
         double Salience,
         string Source);
 
+    public sealed record StateContributionExplanation(
+        long Tick,
+        string ContributionId,
+        string PropertyName,
+        string PreviousValue,
+        string NewValue,
+        string RuleId,
+        string SourceEventId,
+        string ProvenanceSource);
+
     public sealed record CausalExplanation(
         string TargetKey,
         string PrimaryConclusion,
-        List<CausalStep> ChainOfEvents);
+        List<CausalStep> ChainOfEvents,
+        List<StateContributionExplanation> StateContributions);
 
     public static class CausalExplainer
     {
-        public static CausalExplanation ExplainEntity(SimulationEngine engine, StableId entityId)
+        public static CausalExplanation ExplainEntity(SimulationEngine engine, StableId entityId, string? propertyName = null)
         {
             string key = entityId.Value;
             var chain = new List<CausalStep>();
 
+            // Retrieve deterministic state contributions from state ledger
+            IEnumerable<StateContribution> contributions = !string.IsNullOrEmpty(propertyName)
+                ? engine.State.Ledger.GetContributionsForProperty(entityId, propertyName)
+                : engine.State.Ledger.GetContributionsForEntity(entityId);
+
+            var contribExplanations = contributions.Select(c => new StateContributionExplanation(
+                c.Tick,
+                c.ContributionId.Value,
+                c.PropertyName,
+                c.PreviousValue?.ToString() ?? "<null>",
+                c.NewValue?.ToString() ?? "<null>",
+                c.RuleId ?? "<none>",
+                c.SourceEventId?.Value ?? "<none>",
+                c.Provenance.Source.ToString()
+            )).ToList();
+
             // 1. If entity is a Club
             if (engine.State.Clubs.TryGetValue(entityId, out var club))
             {
-                // Find matches involving this club
                 var clubMatches = engine.EventHistory
                     .OfType<MatchCompletedEvent>()
                     .Where(m => m.HomeClubId == entityId || m.AwayClubId == entityId)
                     .OrderBy(m => m.Tick)
+                    .ThenBy(m => m.EventId.Value, StringComparer.Ordinal)
                     .ToList();
 
                 int totalWins = 0, totalLosses = 0, totalDraws = 0;
@@ -61,8 +89,8 @@ namespace FootballWorldLab.Core.Analysis
                     }
                 }
 
-                string conclusion = $"{club.Name} reached Elo {club.RatingElo:F1} after {clubMatches.Count} matches ({totalWins}W, {totalDraws}D, {totalLosses}L).";
-                return new CausalExplanation(key, conclusion, chain);
+                string conclusion = $"{club.Name} reached Elo {club.RatingElo:F1} after {clubMatches.Count} matches ({totalWins}W, {totalDraws}D, {totalLosses}L). Recorded {contribExplanations.Count} state contributions.";
+                return new CausalExplanation(key, conclusion, chain, contribExplanations);
             }
 
             // 2. If entity is a Player
@@ -71,6 +99,8 @@ namespace FootballWorldLab.Core.Analysis
                 var playerTransfers = engine.EventHistory
                     .OfType<PlayerTransferredEvent>()
                     .Where(t => t.PlayerId == entityId)
+                    .OrderBy(t => t.Tick)
+                    .ThenBy(t => t.EventId.Value, StringComparer.Ordinal)
                     .ToList();
 
                 foreach (var trf in playerTransfers)
@@ -85,12 +115,13 @@ namespace FootballWorldLab.Core.Analysis
                         trf.Provenance.Source.ToString()));
                 }
 
-                string conclusion = $"Player {entityId.Value} is rated {player.OverallRating}/{player.Potential} in position {player.Position}.";
-                return new CausalExplanation(key, conclusion, chain);
+                string conclusion = $"Player {entityId.Value} is rated {player.OverallRating}/{player.Potential} in position {player.Position}. Recorded {contribExplanations.Count} state contributions.";
+                return new CausalExplanation(key, conclusion, chain, contribExplanations);
             }
 
-            // Fallback for general query
-            return new CausalExplanation(key, $"No specific entity history found for '{key}'.", chain);
+            // Generic entity explanation
+            string genericConclusion = $"Entity {key} has {contribExplanations.Count} state contribution(s) recorded in ledger.";
+            return new CausalExplanation(key, genericConclusion, chain, contribExplanations);
         }
     }
 }

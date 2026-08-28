@@ -30,6 +30,9 @@ namespace FootballWorldLab.Core.Simulation
         // Map event ID -> salience score
         public Dictionary<StableId, double> EventSalience { get; } = new Dictionary<StableId, double>();
 
+        private long _contributionCounter = 0;
+        private long _effectCounter = 0;
+
         public SimulationEngine(ulong seed = 42UL, int startYear = 2024)
         {
             Rng = new SeededRandom(seed);
@@ -44,10 +47,67 @@ namespace FootballWorldLab.Core.Simulation
             Rng = rng;
         }
 
+        public StableId NextContributionId()
+        {
+            _contributionCounter++;
+            return StableId.Create("Contrib", $"{Clock.TotalTicks}-{_contributionCounter}");
+        }
+
+        public StableId NextEffectId()
+        {
+            _effectCounter++;
+            return StableId.Create("Effect", $"{Clock.TotalTicks}-{_effectCounter}");
+        }
+
+        public void RecordStateContribution(
+            StableId targetEntityId,
+            string propertyName,
+            object? previousValue,
+            object? newValue,
+            StableId? sourceEventId,
+            string? ruleId,
+            ProvenanceInfo provenance)
+        {
+            var contribution = new StateContribution(
+                NextContributionId(),
+                Clock.TotalTicks,
+                targetEntityId,
+                propertyName,
+                previousValue,
+                newValue,
+                sourceEventId,
+                ruleId,
+                provenance);
+            State = State.WithContribution(contribution);
+        }
+
+        public void RecordEffect(
+            StableId sourceEventId,
+            string sourceRuleId,
+            StableId targetEntityId,
+            string targetProperty,
+            object? oldValue,
+            object? newValue)
+        {
+            var effect = new Effect(
+                NextEffectId(),
+                sourceEventId,
+                sourceRuleId,
+                targetEntityId,
+                targetProperty,
+                oldValue,
+                newValue,
+                Clock.TotalTicks);
+            State = State.WithEffect(effect);
+        }
+
         public void InitializeDefaultWorld(int clubsPerLeague = 10, int leagues = 2)
         {
-            var country = new Country(StableId.Create("Country", "COL"), "Colombia", "COL");
+            var synthProv = new ProvenanceInfo(ProvenanceSource.Synthetic, "World Initialization");
+
+            var country = new Country(StableId.Create("Country", "COL"), "Colombia", "COL", synthProv);
             State = State.WithCountry(country);
+            RecordStateContribution(country.Id, "Name", null, country.Name, null, "WorldInit", synthProv);
 
             string[] leagueNames = new[] { "Liga Dimayor Primera A", "Liga Dimayor Primera B" };
             
@@ -55,12 +115,14 @@ namespace FootballWorldLab.Core.Simulation
             for (int l = 0; l < Math.Min(leagues, leagueNames.Length); l++)
             {
                 var compId = StableId.Create("Competition", $"L{l + 1}");
-                var competition = new Competition(compId, country.Id, leagueNames[l], "League");
+                var competition = new Competition(compId, country.Id, leagueNames[l], "League", synthProv);
                 State = State.WithCompetition(competition);
+                RecordStateContribution(competition.Id, "Name", null, competition.Name, null, "WorldInit", synthProv);
 
                 var seasonId = StableId.Create("Season", $"Comp-{l + 1}-{Clock.SeasonStartYear}");
-                var season = new Season(seasonId, compId, Clock.SeasonStartYear, Clock.CurrentDate, Clock.CurrentDate.AddMonths(11));
+                var season = new Season(seasonId, compId, Clock.SeasonStartYear, Clock.CurrentDate, Clock.CurrentDate.AddMonths(11), synthProv);
                 State = State.WithSeason(season);
+                RecordStateContribution(season.Id, "Year", null, season.Year, null, "WorldInit", synthProv);
 
                 List<Club> leagueClubs = new List<Club>();
                 for (int i = 0; i < clubsPerLeague; i++)
@@ -75,22 +137,26 @@ namespace FootballWorldLab.Core.Simulation
 
                     double initialElo = 1500.0 + (clubsPerLeague - i) * 15.0 - (l * 100.0) + (Rng.NextDouble() * 30.0 - 15.0);
                     var cityId = StableId.Create("City", $"CITY-{totalClubs}");
-                    var city = new City(cityId, country.Id, $"{clubName} City");
+                    var city = new City(cityId, country.Id, $"{clubName} City", synthProv);
                     State = State.WithCity(city);
+                    RecordStateContribution(city.Id, "Name", null, city.Name, null, "WorldInit", synthProv);
 
                     var clubId = StableId.Create("Club", $"C{totalClubs}");
-                    var club = new Club(clubId, cityId, clubName, clubName.Substring(0, Math.Min(3, clubName.Length)).ToUpperInvariant(), initialElo);
+                    var club = new Club(clubId, cityId, clubName, clubName.Substring(0, Math.Min(3, clubName.Length)).ToUpperInvariant(), initialElo, synthProv);
                     State = State.WithClub(club);
+                    RecordStateContribution(club.Id, "RatingElo", null, club.RatingElo, null, "WorldInit", synthProv);
                     leagueClubs.Add(club);
 
                     // Create Manager
                     var mgrPersonId = StableId.Create("Person", $"MGR-P-{totalClubs}");
-                    var mgrPerson = new Person(mgrPersonId, country.Id, "Manager", $"{clubName}", Clock.CurrentDate.AddYears(-Rng.NextInt(35, 65)));
+                    var mgrPerson = new Person(mgrPersonId, country.Id, "Manager", $"{clubName}", Clock.CurrentDate.AddYears(-Rng.NextInt(35, 65)), synthProv);
                     State = State.WithPerson(mgrPerson);
+                    RecordStateContribution(mgrPerson.Id, "LastName", null, mgrPerson.LastName, null, "WorldInit", synthProv);
 
                     var mgrId = StableId.Create("Manager", $"MGR-{totalClubs}");
-                    var mgr = new Manager(mgrId, mgrPersonId, Rng.NextInt(60, 85), Rng.NextInt(60, 85));
+                    var mgr = new Manager(mgrId, mgrPersonId, Rng.NextInt(60, 85), Rng.NextInt(60, 85), synthProv);
                     State = State.WithManager(mgr);
+                    RecordStateContribution(mgr.Id, "TacticalRating", null, mgr.TacticalRating, null, "WorldInit", synthProv);
 
                     // Create Players & Squad
                     for (int p = 1; p <= 18; p++)
@@ -107,20 +173,24 @@ namespace FootballWorldLab.Core.Simulation
                         int potential = Math.Clamp(overall + Rng.NextInt(0, 10), overall, 92);
 
                         var pPersonId = StableId.Create("Person", $"P-{totalClubs}-{p}");
-                        var pPerson = new Person(pPersonId, country.Id, $"Player", $"{totalClubs}-{p}", Clock.CurrentDate.AddYears(-age));
+                        var pPerson = new Person(pPersonId, country.Id, $"Player", $"{totalClubs}-{p}", Clock.CurrentDate.AddYears(-age), synthProv);
                         State = State.WithPerson(pPerson);
+                        RecordStateContribution(pPerson.Id, "LastName", null, pPerson.LastName, null, "WorldInit", synthProv);
 
                         var playerId = StableId.Create("Player", $"PLY-{totalClubs}-{p}");
-                        var player = new Player(playerId, pPersonId, pos, overall, potential);
+                        var player = new Player(playerId, pPersonId, pos, overall, potential, synthProv);
                         State = State.WithPlayer(player);
+                        RecordStateContribution(player.Id, "OverallRating", null, player.OverallRating, null, "WorldInit", synthProv);
 
                         var squadId = StableId.Create("Squad", $"SQ-{totalClubs}-{p}");
-                        var squad = new SquadMembership(squadId, clubId, playerId, p, true);
+                        var squad = new SquadMembership(squadId, clubId, playerId, p, true, synthProv);
                         State = State.WithSquadMembership(squad);
+                        RecordStateContribution(squad.Id, "ClubId", null, squad.ClubId.Value, null, "WorldInit", synthProv);
 
                         var contractId = StableId.Create("Contract", $"CON-{totalClubs}-{p}");
-                        var contract = new Contract(contractId, clubId, pPersonId, (decimal)(overall * 100), Clock.CurrentDate, Clock.CurrentDate.AddYears(Rng.NextInt(1, 4)));
+                        var contract = new Contract(contractId, clubId, pPersonId, (decimal)(overall * 100), Clock.CurrentDate, Clock.CurrentDate.AddYears(Rng.NextInt(1, 4)), synthProv);
                         State = State.WithContract(contract);
+                        RecordStateContribution(contract.Id, "WeeklyWage", null, contract.WeeklyWage, null, "WorldInit", synthProv);
                     }
                 }
 
@@ -131,6 +201,7 @@ namespace FootballWorldLab.Core.Simulation
 
         private void GenerateLeagueFixtures(StableId seasonId, List<Club> clubs)
         {
+            var synthProv = new ProvenanceInfo(ProvenanceSource.Synthetic, "Fixture Generation");
             int n = clubs.Count;
             int matchCounter = 0;
             DateTime matchDate = Clock.CurrentDate.AddDays(7);
@@ -152,8 +223,9 @@ namespace FootballWorldLab.Core.Simulation
 
                     matchCounter++;
                     var matchId = StableId.Create("Match", $"{seasonId.Value}-M{matchCounter}");
-                    var match = new Match(matchId, seasonId, clubs[homeIdx].Id, clubs[awayIdx].Id, matchDate, 0, 0, false);
+                    var match = new Match(matchId, seasonId, clubs[homeIdx].Id, clubs[awayIdx].Id, matchDate, 0, 0, false, synthProv);
                     State = State.WithMatch(match);
+                    RecordStateContribution(match.Id, "Played", null, false, null, "FixtureGen", synthProv);
                 }
                 matchDate = matchDate.AddDays(7);
             }
@@ -190,9 +262,19 @@ namespace FootballWorldLab.Core.Simulation
             int homeGoals = SamplePoisson(expectedHomeGoals);
             int awayGoals = SamplePoisson(expectedAwayGoals);
 
+            // Record Event & Salience
+            var evtId = StableId.Create("Event", $"Match-{match.Id.Value}");
+            var provenance = new ProvenanceInfo(ProvenanceSource.Synthetic, "Simulated match result");
+            var matchEvt = new MatchCompletedEvent(evtId, tick, provenance, match.Id, homeClub.Id, awayClub.Id, homeGoals, awayGoals);
+
             // Update Match State
-            var updatedMatch = match with { HomeGoals = homeGoals, AwayGoals = awayGoals, Played = true };
+            var updatedMatch = match with { HomeGoals = homeGoals, AwayGoals = awayGoals, Played = true, Provenance = provenance };
             State = State.WithMatch(updatedMatch);
+
+            RecordStateContribution(match.Id, "Played", false, true, evtId, "MatchSimulationRule", provenance);
+            RecordStateContribution(match.Id, "HomeGoals", 0, homeGoals, evtId, "MatchSimulationRule", provenance);
+            RecordStateContribution(match.Id, "AwayGoals", 0, awayGoals, evtId, "MatchSimulationRule", provenance);
+            RecordEffect(evtId, "MatchSimulationRule", match.Id, "Played", false, true);
 
             // Update Elo
             double kFactor = 32.0;
@@ -202,14 +284,17 @@ namespace FootballWorldLab.Core.Simulation
             double newHomeElo = homeClub.RatingElo + kFactor * (actualHomeScore - expectedHomeScore);
             double newAwayElo = awayClub.RatingElo + kFactor * ((1.0 - actualHomeScore) - (1.0 - expectedHomeScore));
 
-            State = State.WithClub(homeClub with { RatingElo = Math.Clamp(newHomeElo, 500.0, 3000.0) });
-            State = State.WithClub(awayClub with { RatingElo = Math.Clamp(newAwayElo, 500.0, 3000.0) });
+            double clampedHomeElo = Math.Clamp(newHomeElo, 500.0, 3000.0);
+            double clampedAwayElo = Math.Clamp(newAwayElo, 500.0, 3000.0);
 
-            // Record Event & Salience
-            var evtId = StableId.Create("Event", $"Match-{match.Id.Value}");
-            var provenance = new ProvenanceInfo(ProvenanceSource.Synthetic, "Simulated match result");
-            var matchEvt = new MatchCompletedEvent(evtId, tick, provenance, match.Id, homeClub.Id, awayClub.Id, homeGoals, awayGoals);
-            
+            RecordStateContribution(homeClub.Id, "RatingElo", homeClub.RatingElo, clampedHomeElo, evtId, "EloCalculationRule", provenance);
+            RecordStateContribution(awayClub.Id, "RatingElo", awayClub.RatingElo, clampedAwayElo, evtId, "EloCalculationRule", provenance);
+            RecordEffect(evtId, "EloCalculationRule", homeClub.Id, "RatingElo", homeClub.RatingElo, clampedHomeElo);
+            RecordEffect(evtId, "EloCalculationRule", awayClub.Id, "RatingElo", awayClub.RatingElo, clampedAwayElo);
+
+            State = State.WithClub(homeClub with { RatingElo = clampedHomeElo, Provenance = provenance });
+            State = State.WithClub(awayClub with { RatingElo = clampedAwayElo, Provenance = provenance });
+
             double salience = SalienceEvaluator.EvaluateMatchSalience(matchEvt, State, homeClub.RatingElo, awayClub.RatingElo);
             
             RecordEvent(matchEvt, null, salience);
@@ -274,12 +359,17 @@ namespace FootballWorldLab.Core.Simulation
                 }
 
                 int newOverall = Math.Clamp(player.OverallRating + delta, 40, player.Potential);
-                var updatedPlayer = player with { OverallRating = newOverall };
-                State = State.WithPlayer(updatedPlayer);
 
                 var ageEvtId = StableId.Create("Event", $"Age-{player.Id.Value}-{Clock.SeasonStartYear}");
-                var ageEvt = new PlayerAgedEvent(ageEvtId, tick, new ProvenanceInfo(ProvenanceSource.Synthetic, "Annual age step"), player.Id, newAge);
+                var ageProv = new ProvenanceInfo(ProvenanceSource.Synthetic, "Annual age step");
+                var ageEvt = new PlayerAgedEvent(ageEvtId, tick, ageProv, player.Id, newAge);
                 RecordEvent(ageEvt, null, 0.05);
+
+                RecordStateContribution(player.Id, "OverallRating", player.OverallRating, newOverall, ageEvtId, "PlayerAgingRule", ageProv);
+                RecordEffect(ageEvtId, "PlayerAgingRule", player.Id, "OverallRating", player.OverallRating, newOverall);
+
+                var updatedPlayer = player with { OverallRating = newOverall, Provenance = ageProv };
+                State = State.WithPlayer(updatedPlayer);
             }
 
             // 2. Transfers (simple transfer simulation)
@@ -300,20 +390,24 @@ namespace FootballWorldLab.Core.Simulation
                     var squadMember = sellerSquad[Rng.NextInt(sellerSquad.Count)];
                     if (State.Players.TryGetValue(squadMember.PlayerId, out var player))
                     {
-                        // Transfer player
-                        var newSquadMember = squadMember with { ClubId = buyerClub.Id };
-                        State = State.WithSquadMembership(newSquadMember);
-
                         decimal fee = (decimal)(player.OverallRating * 50_000);
                         var transferEvtId = StableId.Create("Event", $"Trf-{player.Id.Value}-{Clock.SeasonStartYear}");
+                        var trfProv = new ProvenanceInfo(ProvenanceSource.Synthetic, "Offseason transfer");
                         var transferEvt = new PlayerTransferredEvent(
                             transferEvtId,
                             tick,
-                            new ProvenanceInfo(ProvenanceSource.Synthetic, "Offseason transfer"),
+                            trfProv,
                             player.Id,
                             sellerClub.Id,
                             buyerClub.Id,
                             fee);
+
+                        // Transfer player squad membership
+                        RecordStateContribution(squadMember.Id, "ClubId", squadMember.ClubId.Value, buyerClub.Id.Value, transferEvtId, "PlayerTransferRule", trfProv);
+                        RecordEffect(transferEvtId, "PlayerTransferRule", squadMember.Id, "ClubId", squadMember.ClubId.Value, buyerClub.Id.Value);
+
+                        var newSquadMember = squadMember with { ClubId = buyerClub.Id, Provenance = trfProv };
+                        State = State.WithSquadMembership(newSquadMember);
 
                         double salience = SalienceEvaluator.EvaluateTransferSalience(transferEvt, player.OverallRating, fee);
                         RecordEvent(transferEvt, null, salience);
@@ -334,8 +428,10 @@ namespace FootballWorldLab.Core.Simulation
             foreach (var competition in State.Competitions.Values)
             {
                 var newSeasonId = StableId.Create("Season", $"{competition.Id.Value}-{Clock.SeasonStartYear}");
-                var newSeason = new Season(newSeasonId, competition.Id, Clock.SeasonStartYear, Clock.CurrentDate, Clock.CurrentDate.AddMonths(11));
+                var seasonProv = new ProvenanceInfo(ProvenanceSource.Synthetic, "Season Generation");
+                var newSeason = new Season(newSeasonId, competition.Id, Clock.SeasonStartYear, Clock.CurrentDate, Clock.CurrentDate.AddMonths(11), seasonProv);
                 State = State.WithSeason(newSeason);
+                RecordStateContribution(newSeason.Id, "Year", null, newSeason.Year, null, "SeasonGeneration", seasonProv);
 
                 var compClubs = State.Clubs.Values.ToList(); // Simple multi-club list
                 GenerateLeagueFixtures(newSeasonId, compClubs);

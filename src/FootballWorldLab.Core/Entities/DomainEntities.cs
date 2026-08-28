@@ -1,17 +1,43 @@
 using System;
 using FootballWorldLab.Core.Ids;
+using FootballWorldLab.Core.Provenance;
 
 namespace FootballWorldLab.Core.Entities
 {
-    public sealed record Country(StableId Id, string Name, string Code);
+    public sealed record Country(
+        StableId Id,
+        string Name,
+        string Code,
+        ProvenanceInfo Provenance = default);
 
-    public sealed record City(StableId Id, StableId CountryId, string Name);
+    public sealed record City(
+        StableId Id,
+        StableId CountryId,
+        string Name,
+        ProvenanceInfo Provenance = default);
 
-    public sealed record Club(StableId Id, StableId CityId, string Name, string ShortName, double RatingElo = 1500.0);
+    public sealed record Club(
+        StableId Id,
+        StableId CityId,
+        string Name,
+        string ShortName,
+        double RatingElo = 1500.0,
+        ProvenanceInfo Provenance = default);
 
-    public sealed record Competition(StableId Id, StableId CountryId, string Name, string Format);
+    public sealed record Competition(
+        StableId Id,
+        StableId CountryId,
+        string Name,
+        string Format,
+        ProvenanceInfo Provenance = default);
 
-    public sealed record Season(StableId Id, StableId CompetitionId, int Year, DateTime StartDate, DateTime EndDate);
+    public sealed record Season(
+        StableId Id,
+        StableId CompetitionId,
+        int Year,
+        DateTime StartDate,
+        DateTime EndDate,
+        ProvenanceInfo Provenance = default);
 
     public sealed record Match(
         StableId Id,
@@ -21,34 +47,39 @@ namespace FootballWorldLab.Core.Entities
         DateTime Date,
         int HomeGoals = 0,
         int AwayGoals = 0,
-        bool Played = false);
+        bool Played = false,
+        ProvenanceInfo Provenance = default);
 
     public sealed record Person(
         StableId Id,
         StableId NationalityId,
         string FirstName,
         string LastName,
-        DateTime BirthDate);
+        DateTime BirthDate,
+        ProvenanceInfo Provenance = default);
 
     public sealed record Player(
         StableId Id,
         StableId PersonId,
         string Position,
         int OverallRating,
-        int Potential);
+        int Potential,
+        ProvenanceInfo Provenance = default);
 
     public sealed record Manager(
         StableId Id,
         StableId PersonId,
         int TacticalRating,
-        int DevelopmentRating);
+        int DevelopmentRating,
+        ProvenanceInfo Provenance = default);
 
     public sealed record SquadMembership(
         StableId Id,
         StableId ClubId,
         StableId PlayerId,
         int ShirtNumber,
-        bool IsActive);
+        bool IsActive = true,
+        ProvenanceInfo Provenance = default);
 
     public sealed record Contract(
         StableId Id,
@@ -56,5 +87,6 @@ namespace FootballWorldLab.Core.Entities
         StableId PersonId,
         decimal WeeklyWage,
         DateTime StartDate,
-        DateTime EndDate);
+        DateTime EndDate,
+        ProvenanceInfo Provenance = default);
 }

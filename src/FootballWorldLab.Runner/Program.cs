@@ -71,7 +71,10 @@ namespace FootballWorldLab.Runner
 
                 case "why":
                     string entityKey = GetStringOption(args, "--entity", "Club:C1");
-                    ExplainEntity(entityKey);
+                    string? propertyName = GetOptionalStringOption(args, "--property");
+                    int whyYears = GetIntOption(args, "--years", 5);
+                    ulong whySeed = (ulong)GetIntOption(args, "--seed", 42);
+                    ExplainEntity(entityKey, propertyName, whyYears, whySeed);
                     break;
 
                 case "world-stats":
@@ -95,7 +98,7 @@ namespace FootballWorldLab.Runner
             Console.WriteLine("  monte-carlo [--worlds N] [--years Y] [--out DIR]           Run Monte Carlo simulation & generate reports.");
             Console.WriteLine("  simulate    [--worlds N] [--years Y] [--seed S] [--out DIR]   Run simulation run(s).");
             Console.WriteLine("  inspect     [--file PATH]                                  Inspect a saved WorldState JSON file.");
-            Console.WriteLine("  why         [--entity ID]                                  Generate structured causal explanation.");
+            Console.WriteLine("  why         [--entity ID] [--property PROP] [--years Y]    Generate structured causal explanation & state contributions.");
             Console.WriteLine("  world-stats                                                Display baseline world statistics.");
             Console.WriteLine();
         }
@@ -180,6 +183,7 @@ namespace FootballWorldLab.Runner
             Console.WriteLine($"  Players: {state.Players.Count}");
             Console.WriteLine($"  Competitions: {state.Competitions.Count}");
             Console.WriteLine($"  Contracts: {state.Contracts.Count}");
+            Console.WriteLine($"  State Contributions Recorded: {state.Ledger.Entries.Count}");
             if (state.Clubs.Count > 0)
             {
                 double maxElo = state.Clubs.Values.Max(c => c.RatingElo);
@@ -188,21 +192,46 @@ namespace FootballWorldLab.Runner
             }
         }
 
-        private static void ExplainEntity(string entityKey)
+        private static void ExplainEntity(string entityKey, string? propertyName = null, int years = 5, ulong seed = 42UL)
         {
-            var engine = new SimulationEngine(42UL);
+            var engine = new SimulationEngine(seed);
             engine.InitializeDefaultWorld();
-            engine.RunYears(10);
+            engine.RunYears(years);
 
             var stableId = new StableId(entityKey);
-            var explanation = CausalExplainer.ExplainEntity(engine, stableId);
+            var explanation = CausalExplainer.ExplainEntity(engine, stableId, propertyName);
 
-            Console.WriteLine($"Structured Causal Explanation for '{entityKey}':");
+            Console.WriteLine($"Structured Causal Explanation for '{entityKey}' (Property: {propertyName ?? "ALL"}):");
             Console.WriteLine($"Primary Conclusion: {explanation.PrimaryConclusion}");
-            Console.WriteLine("Causal Thread:");
-            foreach (var step in explanation.ChainOfEvents)
+            
+            Console.WriteLine("\nCausal Event Thread:");
+            if (explanation.ChainOfEvents.Count == 0)
             {
-                Console.WriteLine($"  [Tick {step.Tick}] {step.Summary} (Salience: {step.Salience:F2})");
+                Console.WriteLine("  (No high-salience causal events in thread)");
+            }
+            else
+            {
+                foreach (var step in explanation.ChainOfEvents)
+                {
+                    Console.WriteLine($"  [Tick {step.Tick}] {step.Summary} (Salience: {step.Salience:F2}) [{step.Source}]");
+                }
+            }
+
+            Console.WriteLine($"\nState Contributions Ledger ({explanation.StateContributions.Count} entries in deterministic order):");
+            if (explanation.StateContributions.Count == 0)
+            {
+                Console.WriteLine("  (No state contributions found)");
+            }
+            else
+            {
+                foreach (var c in explanation.StateContributions.Take(25))
+                {
+                    Console.WriteLine($"  [Tick {c.Tick}] Contrib: {c.ContributionId} | Property: {c.PropertyName} | {c.PreviousValue} -> {c.NewValue} | Rule: {c.RuleId} | Event: {c.SourceEventId} [{c.ProvenanceSource}]");
+                }
+                if (explanation.StateContributions.Count > 25)
+                {
+                    Console.WriteLine($"  ... and {explanation.StateContributions.Count - 25} more contributions.");
+                }
             }
         }
 
@@ -244,6 +273,18 @@ namespace FootballWorldLab.Runner
                 }
             }
             return defaultValue;
+        }
+
+        private static string? GetOptionalStringOption(string[] args, string flag)
+        {
+            for (int i = 0; i < args.Length - 1; i++)
+            {
+                if (args[i].Equals(flag, StringComparison.OrdinalIgnoreCase))
+                {
+                    return args[i + 1];
+                }
+            }
+            return null;
         }
     }
 }
