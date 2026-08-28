@@ -1,0 +1,78 @@
+{
+  "datasetName": "openfootball South America Historical Results",
+  "version": "1.0.0",
+  "license": "MIT",
+  "licenseUrl": "https://github.com/openfootball/south-america/blob/master/LICENSE",
+  "description": "Historical openfootball match results and team definitions for South American environments (Colombia, Argentina, Brazil, Copa Libertadores)",
+  "environments": [
+    {
+      "environmentId": "Colombia",
+      "countryCode": "COL",
+      "competitionName": "Categoría Primera A",
+      "sources": [
+        {
+          "sourceId": "openfootball-colombia-2023",
+          "url": "https://raw.githubusercontent.com/openfootball/colombia/master/2023/1-liga.txt",
+          "sha256": "",
+          "description": "2023 Liga BetPlay Dimayor match results"
+        }
+      ]
+    },
+    {
+      "environmentId": "Argentina",
+      "countryCode": "ARG",
+      "competitionName": "Primera División",
+      "sources": [
+        {
+          "sourceId": "openfootball-argentina-2023",
+          "url": "https://raw.githubusercontent.com/openfootball/argentina/master/2023/1-liga.txt",
+          "sha256": "",
+          "description": "2023 Primera División match results"
+        }
+      ]
+    },
+    {
+      "environmentId": "Brazil",
+      "countryCode": "BRA",
+      "competitionName": "Série A",
+      "sources": [
+        {
+          "sourceId": "openfootball-brazil-2023",
+          "url": "https://raw.githubusercontent.com/openfootball/brazil/master/2023/1-seriea.txt",
+          "sha256": "",
+          "description": "2023 Campeonato Brasileiro Série A match results"
+        }
+      ]
+    },
+    {
+      "environmentId": "CopaLibertadores",
+      "countryCode": "SA",
+      "competitionName": "Copa Libertadores",
+      "sources": [
+        {
+          "sourceId": "openfootball-copa-libertadores-2023",
+          "url": "https://raw.githubusercontent.com/openfootball/copa-libertadores/master/2023/libertadores.txt",
+          "sha256": "",
+          "description": "2023 Copa Libertadores match results"
+        }
+      ]
+    }
+  ],
+  "defaultAliases": {
+    "Atlético Nacional": "Atlético Nacional",
+    "A. Nacional": "Atlético Nacional",
+    "Nacional": "Atlético Nacional",
+    "Millonarios": "Millonarios FC",
+    "Millonarios FC": "Millonarios FC",
+    "Independiente Santa Fe": "Santa Fe",
+    "Santa Fe": "Santa Fe",
+    "Boca Juniors": "Boca Juniors",
+    "CA Boca Juniors": "Boca Juniors",
+    "River Plate": "River Plate",
+    "CA River Plate": "River Plate",
+    "Flamengo": "CR Flamengo",
+    "CR Flamengo": "CR Flamengo",
+    "Palmeiras": "SE Palmeiras",
+    "SE Palmeiras": "SE Palmeiras"
+  }
+}

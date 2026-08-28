@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using FootballWorldLab.Core.Analysis;
 using FootballWorldLab.Core.Ids;
+using FootballWorldLab.Core.Ingestion;
 using FootballWorldLab.Core.Invariants;
 using FootballWorldLab.Core.MonteCarlo;
 using FootballWorldLab.Core.Persistence;
@@ -33,6 +34,13 @@ namespace FootballWorldLab.Runner
 
             switch (command)
             {
+                case "ingest":
+                    string manifestPath = GetStringOption(args, "--manifest", "data/openfootball_manifest.json");
+                    string ingestOutDir = GetStringOption(args, "--out", "reports/ingestion");
+                    string reportPath = GetStringOption(args, "--report", "reports/ingestion/coverage_report.md");
+                    RunIngestion(manifestPath, ingestOutDir, reportPath);
+                    break;
+
                 case "monte-carlo":
                     int mcWorlds = GetIntOption(args, "--worlds", 100);
                     int mcYears = GetIntOption(args, "--years", 30);
@@ -83,12 +91,29 @@ namespace FootballWorldLab.Runner
             Console.WriteLine("  dotnet run --project src/FootballWorldLab.Runner -- [command] [options]");
             Console.WriteLine();
             Console.WriteLine("Commands:");
-            Console.WriteLine("  monte-carlo [--worlds N] [--years Y] [--out DIR] Run Monte Carlo simulation & generate reports.");
-            Console.WriteLine("  simulate    [--worlds N] [--years Y] [--seed S] [--out DIR] Run simulation run(s).");
-            Console.WriteLine("  inspect     [--file PATH]                       Inspect a saved WorldState JSON file.");
-            Console.WriteLine("  why         [--entity ID]                       Generate structured causal explanation.");
-            Console.WriteLine("  world-stats                                     Display baseline world statistics.");
+            Console.WriteLine("  ingest      [--manifest PATH] [--out DIR] [--report PATH]  Ingest openfootball historical data & generate coverage report.");
+            Console.WriteLine("  monte-carlo [--worlds N] [--years Y] [--out DIR]           Run Monte Carlo simulation & generate reports.");
+            Console.WriteLine("  simulate    [--worlds N] [--years Y] [--seed S] [--out DIR]   Run simulation run(s).");
+            Console.WriteLine("  inspect     [--file PATH]                                  Inspect a saved WorldState JSON file.");
+            Console.WriteLine("  why         [--entity ID]                                  Generate structured causal explanation.");
+            Console.WriteLine("  world-stats                                                Display baseline world statistics.");
             Console.WriteLine();
+        }
+
+        private static void RunIngestion(string manifestPath, string outDir, string reportPath)
+        {
+            Console.WriteLine($"Running openfootball historical ingestion from '{manifestPath}'...");
+            var manifest = IngestionPipeline.LoadManifest(manifestPath);
+            var results = IngestionPipeline.RunIngestion(manifest, outDir, reportPath);
+
+            int totalValid = results.Sum(r => r.ValidMatches.Count);
+            int totalIssues = results.Sum(r => r.ValidationIssues.Count);
+
+            Console.WriteLine($"Ingestion completed. Total valid matches: {totalValid}, Total validation issues/dupes: {totalIssues}");
+            if (!string.IsNullOrEmpty(reportPath) && File.Exists(reportPath))
+            {
+                Console.WriteLine($"Coverage report written to '{reportPath}'");
+            }
         }
 
         private static void RunMonteCarlo(int worlds, int years, string outDir, ulong baseSeed = 10000UL)
