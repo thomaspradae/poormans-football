@@ -12,8 +12,8 @@
       "sources": [
         {
           "sourceId": "openfootball-colombia-2023",
-          "url": "https://raw.githubusercontent.com/openfootball/colombia/master/2023/1-liga.txt",
-          "sha256": "",
+          "url": "https://raw.githubusercontent.com/openfootball/south-america/master/colombia/2023_co1.txt",
+          "sha256": "9b23fff2a453fb8a3ec0c92e2fddc677dd8c9885206af3f02df97dcc0219646c",
           "description": "2023 Liga BetPlay Dimayor match results"
         }
       ]
@@ -25,8 +25,8 @@
       "sources": [
         {
           "sourceId": "openfootball-argentina-2023",
-          "url": "https://raw.githubusercontent.com/openfootball/argentina/master/2023/1-liga.txt",
-          "sha256": "",
+          "url": "https://raw.githubusercontent.com/openfootball/south-america/master/argentina/2023_ar1.txt",
+          "sha256": "0d20768c23ff850a4b30240c6cf648524230b93578cb09a988df2a817d3974ef",
           "description": "2023 Primera División match results"
         }
       ]
@@ -38,8 +38,8 @@
       "sources": [
         {
           "sourceId": "openfootball-brazil-2023",
-          "url": "https://raw.githubusercontent.com/openfootball/brazil/master/2023/1-seriea.txt",
-          "sha256": "",
+          "url": "https://raw.githubusercontent.com/openfootball/south-america/master/brazil/2023_br1.txt",
+          "sha256": "c05ee51787ae8c577da81352c5a0db3e895e6baf02fdd8514ffc670d878da3f3",
           "description": "2023 Campeonato Brasileiro Série A match results"
         }
       ]
@@ -51,8 +51,8 @@
       "sources": [
         {
           "sourceId": "openfootball-copa-libertadores-2023",
-          "url": "https://raw.githubusercontent.com/openfootball/copa-libertadores/master/2023/libertadores.txt",
-          "sha256": "",
+          "url": "https://raw.githubusercontent.com/openfootball/south-america/master/copa-libertadores/2023_copal.txt",
+          "sha256": "071dd58383f7be9bffcea7d8cd9b33fe4b711a4e3bfd6fdbcf732c1485304221",
           "description": "2023 Copa Libertadores match results"
         }
       ]
