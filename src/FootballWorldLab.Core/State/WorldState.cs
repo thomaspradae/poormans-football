@@ -9,17 +9,17 @@ namespace FootballWorldLab.Core.State
     /// </summary>
     public sealed record WorldState
     {
-        public ImmutableDictionary<StableId, Club> Clubs { get; init } = ImmutableDictionary<StableId, Club>.Empty;
-        public ImmutableDictionary<StableId, Player> Players { get; init } = ImmutableDictionary<StableId, Player>.Empty;
-        public ImmutableDictionary<StableId, Manager> Managers { get; init } = ImmutableDictionary<StableId, Manager>.Empty;
-        public ImmutableDictionary<StableId, Person> People { get; init } = ImmutableDictionary<StableId, Person>.Empty;
-        public ImmutableDictionary<StableId, City> Cities { get; init } = ImmutableDictionary<StableId, City>.Empty;
-        public ImmutableDictionary<StableId, Country> Countries { get; init } = ImmutableDictionary<StableId, Country>.Empty;
-        public ImmutableDictionary<StableId, Competition> Competitions { get; init } = ImmutableDictionary<StableId, Competition>.Empty;
-        public ImmutableDictionary<StableId, Season> Seasons { get; init } = ImmutableDictionary<StableId, Season>.Empty;
-        public ImmutableDictionary<StableId, Match> Matches { get; init } = ImmutableDictionary<StableId, Match>.Empty;
-        public ImmutableDictionary<StableId, SquadMembership> SquadMemberships { get; init } = ImmutableDictionary<StableId, SquadMembership>.Empty;
-        public ImmutableDictionary<StableId, Contract> Contracts { get; init } = ImmutableDictionary<StableId, Contract>.Empty;
+        public ImmutableDictionary<StableId, Club> Clubs { get; init; } = ImmutableDictionary<StableId, Club>.Empty;
+        public ImmutableDictionary<StableId, Player> Players { get; init; } = ImmutableDictionary<StableId, Player>.Empty;
+        public ImmutableDictionary<StableId, Manager> Managers { get; init; } = ImmutableDictionary<StableId, Manager>.Empty;
+        public ImmutableDictionary<StableId, Person> People { get; init; } = ImmutableDictionary<StableId, Person>.Empty;
+        public ImmutableDictionary<StableId, City> Cities { get; init; } = ImmutableDictionary<StableId, City>.Empty;
+        public ImmutableDictionary<StableId, Country> Countries { get; init; } = ImmutableDictionary<StableId, Country>.Empty;
+        public ImmutableDictionary<StableId, Competition> Competitions { get; init; } = ImmutableDictionary<StableId, Competition>.Empty;
+        public ImmutableDictionary<StableId, Season> Seasons { get; init; } = ImmutableDictionary<StableId, Season>.Empty;
+        public ImmutableDictionary<StableId, Match> Matches { get; init; } = ImmutableDictionary<StableId, Match>.Empty;
+        public ImmutableDictionary<StableId, SquadMembership> SquadMemberships { get; init; } = ImmutableDictionary<StableId, SquadMembership>.Empty;
+        public ImmutableDictionary<StableId, Contract> Contracts { get; init; } = ImmutableDictionary<StableId, Contract>.Empty;
 
         public WorldState WithClub(Club club) => this with { Clubs = Clubs.SetOrAdd(club.Id, club) };
         public WorldState WithPlayer(Player player) => this with { Players = Players.SetOrAdd(player.Id, player) };

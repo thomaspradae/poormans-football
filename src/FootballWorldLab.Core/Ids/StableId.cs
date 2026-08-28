@@ -1,12 +1,40 @@
 using System;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace FootballWorldLab.Core.Ids
 {
+    public class StableIdJsonConverter : JsonConverter<StableId>
+    {
+        public override StableId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            string? val = reader.GetString();
+            return string.IsNullOrEmpty(val) ? default : new StableId(val);
+        }
+
+        public override void Write(Utf8JsonWriter writer, StableId value, JsonSerializerOptions options)
+        {
+            writer.WriteStringValue(value.Value);
+        }
+
+        public override StableId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            string? val = reader.GetString();
+            return string.IsNullOrEmpty(val) ? default : new StableId(val);
+        }
+
+        public override void WriteAsPropertyName(Utf8JsonWriter writer, StableId value, JsonSerializerOptions options)
+        {
+            writer.WritePropertyName(value.Value ?? string.Empty);
+        }
+    }
+
     /// <summary>
     /// Represents a stable, deterministic identifier for domain entities.
     /// </summary>
+    [JsonConverter(typeof(StableIdJsonConverter))]
     public readonly struct StableId : IEquatable<StableId>, IComparable<StableId>
     {
         public string Value { get; }

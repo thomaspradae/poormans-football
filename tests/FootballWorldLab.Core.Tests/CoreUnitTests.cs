@@ -1,8 +1,13 @@
 using System;
+using System.IO;
+using System.Linq;
 using FootballWorldLab.Core.Clock;
 using FootballWorldLab.Core.Entities;
 using FootballWorldLab.Core.Ids;
+using FootballWorldLab.Core.Persistence;
 using FootballWorldLab.Core.Rng;
+using FootballWorldLab.Core.Salience;
+using FootballWorldLab.Core.Simulation;
 using Xunit;
 
 namespace FootballWorldLab.Core.Tests
@@ -104,6 +109,64 @@ namespace FootballWorldLab.Core.Tests
             var contractId = StableId.Create("Contract", "C1");
             var contract = new Contract(contractId, club.Id, person.Id, 25000m, new DateTime(2024, 1, 1), new DateTime(2025, 12, 31));
             Assert.Equal(25000m, contract.WeeklyWage);
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData(5)]
+        [InlineData(20)]
+        public void SimulationEngine_RunsMultiYearSimulationsSuccessfully(int years)
+        {
+            var engine = new SimulationEngine(999UL);
+            engine.RunYears(years);
+
+            Assert.Equal(2024 + years, engine.Clock.CurrentYear);
+            Assert.NotEmpty(engine.EventLog);
+            Assert.NotEmpty(engine.DomesticStandings);
+        }
+
+        [Fact]
+        public void SaveAndReload_CanonicalHashMatchesContinuousRun()
+        {
+            const ulong seed = 777UL;
+            const int years = 3;
+            string testFile = Path.Combine(Path.GetTempPath(), $"test_save_{Guid.NewGuid()}.json");
+
+            try
+            {
+                // Run continuous simulation
+                var engineContinuous = new SimulationEngine(seed);
+                engineContinuous.RunYears(years);
+                string hashContinuous = SaveManager.ComputeCanonicalHash(engineContinuous);
+
+                // Save simulation to disk
+                SaveManager.SaveToFile(engineContinuous, testFile, years, seed);
+
+                // Reload and run continuous from file
+                var engineReloaded = SaveManager.ReloadAndRunContinuous(testFile);
+                string hashReloaded = SaveManager.ComputeCanonicalHash(engineReloaded);
+
+                Assert.Equal(hashContinuous, hashReloaded);
+            }
+            finally
+            {
+                if (File.Exists(testFile)) File.Delete(testFile);
+            }
+        }
+
+        [Fact]
+        public void SalienceAndThreadClustering_GeneratesValidThreadsAndExplanations()
+        {
+            var engine = new SimulationEngine(1234UL);
+            engine.RunYears(1);
+
+            var threads = SalienceEvaluator.ClusterThreads(engine.EventLog, engine.State);
+            Assert.NotEmpty(threads);
+
+            var topThread = threads.First();
+            Assert.NotNull(topThread.Title);
+            Assert.NotEmpty(topThread.Explanations);
+            Assert.NotEmpty(topThread.Events);
         }
     }
 }
