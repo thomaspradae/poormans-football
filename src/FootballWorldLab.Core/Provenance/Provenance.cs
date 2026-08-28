@@ -24,7 +24,7 @@ namespace FootballWorldLab.Core.Provenance
         
         /// <summary>
         /// Data was estimated or calculated from other data.
-        /// </derived>
+        /// </summary>
         Derived,
         
         /// <summary>
